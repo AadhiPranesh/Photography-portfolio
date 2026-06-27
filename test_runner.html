@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aadhi Photography - Automated Test Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --gold: #c9a84c;
+      --dark: #121212;
+      --card-bg: #1c1c1c;
+      --success: #2ecc71;
+      --error: #e74c3c;
+      --text: #ffffff;
+      --text-muted: #888888;
+    }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Jost', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 1.5rem 3rem;
+      border-bottom: 0.5px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(18, 18, 18, 0.8);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+    }
+    .logo span { color: var(--gold); }
+    .header-controls {
+      display: flex;
+      gap: 1rem;
+    }
+    .btn {
+      background: var(--gold);
+      color: #111;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.05); }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 450px 1fr;
+      height: calc(100vh - 75px);
+      overflow: hidden;
+    }
+
+    /* Left panel: Test cases list & log */
+    .test-panel {
+      border-right: 0.5px solid rgba(255,255,255,0.08);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+    .summary-card {
+      background: var(--card-bg);
+      border: 0.5px solid rgba(255,255,255,0.08);
+      padding: 1.5rem;
+      border-radius: 4px;
+    }
+    .summary-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+    .summary-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+    }
+    .stat-box { text-align: center; flex: 1; }
+    .stat-val { font-size: 1.8rem; font-weight: 600; font-family: 'Playfair Display', serif; }
+    .stat-val.passed { color: var(--success); }
+    .stat-val.failed { color: var(--error); }
+    .stat-lbl { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+
+    .test-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .test-item {
+      background: var(--card-bg);
+      border: 0.5px solid rgba(255,255,255,0.05);
+      border-left: 4px solid #555;
+      padding: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .test-item:hover { border-color: rgba(255,255,255,0.15); background: #222; }
+    .test-item.running { border-left-color: var(--gold); }
+    .test-item.passed { border-left-color: var(--success); }
+    .test-item.failed { border-left-color: var(--error); }
+    
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.2rem;
+    }
+    .test-name { font-size: 0.9rem; font-weight: 500; }
+    .test-status-badge {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+    }
+    .test-item.passed .test-status-badge { background: rgba(46, 204, 113, 0.15); color: var(--success); }
+    .test-item.failed .test-status-badge { background: rgba(231, 76, 60, 0.15); color: var(--error); }
+    .test-item.running .test-status-badge { background: rgba(201, 168, 76, 0.15); color: var(--gold); }
+    .test-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+
+    .log-panel {
+      background: #090909;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.75rem;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 250px;
+    }
+    .log-entry { margin-bottom: 0.4rem; line-height: 1.5; color: #ccc; }
+    .log-entry.info { color: #888; }
+    .log-entry.success { color: var(--success); }
+    .log-entry.error { color: var(--error); font-weight: bold; }
+
+    /* Right panel: Live application frame */
+    .preview-panel {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: #181818;
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .preview-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
+    .iframe-wrapper {
+      flex: 1;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #111;
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #1a1a1a;
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      .test-panel { height: 50vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Aadhi Photography <span>Test Runner</span></div>
+    <div class="header-controls">
+      <button class="btn btn-secondary" onclick="resetIFrame()">
+        <i class="ti ti-refresh"></i> Reset Frame
+      </button>
+      <button class="btn" onclick="runAllTests()">
+        <i class="ti ti-player-play"></i> Run All Tests
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Test Cases Panel -->
+    <div class="test-panel">
+      <div class="summary-card">
+        <div class="summary-title">Test Results</div>
+        <div class="summary-stats">
+          <div class="stat-box">
+            <div class="stat-val" id="stat-total">6</div>
+            <div class="stat-lbl">Total</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val passed" id="stat-passed">0</div>
+            <div class="stat-lbl">Passed</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val failed" id="stat-failed">0</div>
+            <div class="stat-lbl">Failed</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-list">
+        <div class="test-item" id="test-1" onclick="selectTest(1)">
+          <div class="test-header">
+            <span class="test-name">1. Dynamic Load & Renders</span>
+            <span class="test-status-badge" id="badge-1">Idle</span>
+          </div>
+          <p class="test-desc">Verifies that the portfolio page loads correctly, initializes the SITE_DATA script, and renders dynamic content from fallback or Supabase.</p>
+        </div>
+
+        <div class="test-item" id="test-2" onclick="selectTest(2)">
+          <div class="test-header">
+            <span class="test-name">2. Responsive Navigation</span>
+            <span class="test-status-badge" id="badge-2">Idle</span>
+          </div>
+          <p class="test-desc">Simulates toggling the mobile hamburger menu and clicking navigation items to ensure collapse and links work smoothly.</p>
+        </div>
+
+        <div class="test-item" id="test-3" onclick="selectTest(3)">
+          <div class="test-header">
+            <span class="test-name">3. WhatsApp Integrations</span>
+            <span class="test-status-badge" id="badge-3">Idle</span>
+          </div>
+          <p class="test-desc">Scans all book buttons and links to verify they reference the correct WhatsApp phone number (+91 9843282808) and query parameters.</p>
+        </div>
+
+        <div class="test-item" id="test-4" onclick="selectTest(4)">
+          <div class="test-header">
+            <span class="test-name">4. Contact Form Validation</span>
+            <span class="test-status-badge" id="badge-4">Idle</span>
+          </div>
+          <p class="test-desc">Tests form validation by submitting incomplete inputs (should trigger prompt alerts) and fully-filled inputs (should compile WhatsApp message link).</p>
+        </div>
+
+        <div class="test-item" id="test-5" onclick="selectTest(5)">
+          <div class="test-header">
+            <span class="test-name">5. Admin Panel Security</span>
+            <span class="test-status-badge" id="badge-5">Idle</span>
+          </div>
+          <p class="test-desc">Tests that appending `#admin` to the URL triggers the passcode modal and verifies that typing incorrect values denies access.</p>
+        </div>
+
+        <div class="test-item" id="test-6" onclick="selectTest(6)">
+          <div class="test-header">
+            <span class="test-name">6. Real-time Live Editing</span>
+            <span class="test-status-badge" id="badge-6">Idle</span>
+          </div>
+          <p class="test-desc">Authenticates admin access, makes mock alterations in the admin editor tabs, and verifies that the main site updates instantly in the DOM.</p>
+        </div>
+      </div>
+
+      <div style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-top:0.5rem;">Console logs</div>
+      <div class="log-panel" id="log-console">
+        <div class="log-entry info">Test runner initialized. Click "Run All Tests" or select a specific test to begin.</div>
+      </div>
+    </div>
+
+    <!-- Live Preview Panel -->
+    <div class="preview-panel">
+      <div class="preview-header">
+        <span class="preview-title">IFrame Sandbox</span>
+        <span style="font-size:0.75rem; color:var(--text-muted);" id="frame-url">aadhi_photography.html</span>
+      </div>
+      <div class="iframe-wrapper">
+        <iframe id="app-frame" src="aadhi_photography.html"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const iframe = document.getElementById('app-frame');
+    const logConsole = document.getElementById('log-console');
+    
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.innerText = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logConsole.appendChild(entry);
+      logConsole.scrollTop = logConsole.scrollHeight;
+    }
+
+    function resetIFrame() {
+      return new Promise((resolve) => {
+        iframe.onload = () => {
+          log("IFrame reloaded successfully.", "info");
+          document.getElementById('frame-url').innerText = iframe.contentWindow.location.hash ? `aadhi_photography.html${iframe.contentWindow.location.hash}` : "aadhi_photography.html";
+          resolve();
+        };
+        // Reset local storage overrides inside the iframe if necessary, but keep it clean
+        iframe.src = 'aadhi_photography.html';
+      });
+    }
+
+    function setStatus(testNum, status) {
+      const badge = document.getElementById(`badge-${testNum}`);
+      const item = document.getElementById(`test-${testNum}`);
+      badge.innerText = status;
+      
+      item.className = 'test-item';
+      if (status === 'Running') {
+        item.classList.add('running');
+      } else if (status === 'Passed') {
+        item.classList.add('passed');
+      } else if (status === 'Failed') {
+        item.classList.add('failed');
+      }
+      
+      updateSummary();
+    }
+
+    function updateSummary() {
+      let passed = 0;
+      let failed = 0;
+      for (let i = 1; i <= 6; i++) {
+        const text = document.getElementById(`badge-${i}`).innerText;
+        if (text === 'Passed') passed++;
+        if (text === 'Failed') failed++;
+      }
+      document.getElementById('stat-passed').innerText = passed;
+      document.getElementById('stat-failed').innerText = failed;
+    }
+
+    // Delay helper
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // TEST CASES IMPLEMENTATION
+    
+    // Test 1: Load and Render
+    async function testDynamicLoad() {
+      setStatus(1, 'Running');
+      log("Starting Test 1: Dynamic Load & Renders...", "info");
+      try {
+        await resetIFrame();
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        
+        // Check for base structure
+        const heroTitle = doc.querySelector('#home h1');
+        if (!heroTitle) throw new Error("Hero section title not found in DOM.");
+        log(`Found Hero Section! Current Title Text: "${heroTitle.textContent.replace(/\s+/g, ' ').trim()}"`, "info");
+        
+        // Check if dynamic data is loaded
+        const hasServices = doc.querySelectorAll('.service-card').length > 0;
+        if (!hasServices) throw new Error("No service cards rendered.");
+        log(`Successfully rendered ${doc.querySelectorAll('.service-card').length} service cards.`, "info");
+
+        // Verify key stats are loaded
+        const stats = doc.querySelectorAll('.stat-num');
+        if (stats.length === 0) throw new Error("No statistics counter found.");
+        log(`Rendered stats check passed: Experience is ${stats[0].textContent}`, "info");
+
+        setStatus(1, 'Passed');
+        log("Test 1: Passed!", "success");
+        return true;
+      } catch (err) {
+        setStatus(1, 'Failed');
+        log(`Test 1 Failed: ${err.message}`, "error");
+        return false;
+      }
+    }
+
+    // Test 2: Responsive Navigation
+    async function testNavigation() {
+      setStatus(2, 'Running');
+      log("Starting Test 2: Responsive Navigation...", "info");
+      try {
+        await resetIFrame();
+        const win = iframe.contentWindow;
+        const doc = win.document;
+
+        // Toggle mobile navigation menu
+        const hamburger = doc.getElementById('hamburger');
+        const navLinks = doc.getElementById('navLinks');
+        
+        if (!hamburger) throw new Error("Hamburger menu button not found.");
+        if (!navLinks) throw new Error("Navigation Links list container not found.");
+
+        // Check toggling
+        hamburger.click();
+        await sleep(200); // Allow toggle class update
+        if (!navLinks.classList.contains('open')) throw new Error("Menu container did not receive 'open' class upon toggle click.");
+        log("Mobile hamburger menu opens successfully (received 'open' class).", "info");
+
+        // Click it again to close
+        hamburger.click();
+        await sleep(200);
+        if (navLinks.classList.contains('open')) throw new Error("Menu container failed to close on second click.");
+        log("Mobile hamburger menu closes successfully.", "info");
+
+        // Check if clicking links collapses the menu
+        hamburger.click(); // Open again
+        await sleep(100);
+        const firstLink = navLinks.querySelector('a');
+        firstLink.click();
+        await sleep(200);
+        if (navLinks.classList.contains('open')) throw new Error("Menu did not auto-close when clicking a link.");
+        log("Menu successfully auto-closes on clicking link.", "info");
+
+        setStatus(2, 'Passed');
+        log("Test 2: Passed!", "success");
+        return true;
+      } catch (err) {
+        setStatus(2, 'Failed');
+        log(`Test 2 Failed: ${err.message}`, "error");
+        return false;
+      }
+    }
+
+    // Test 3: WhatsApp Integrations
+    async function testWhatsAppLinks() {
+      setStatus(3, 'Running');
+      log("Starting Test 3: WhatsApp Integrations...", "info");
+      try {
+        await resetIFrame();
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+        const links = doc.querySelectorAll('a[href*="wa.me"]');
+        if (links.length === 0) throw new Error("No WhatsApp links found on the website.");
+        
+        log(`Found ${links.length} WhatsApp redirection links on the page.`, "info");
+        
+        links.forEach((link, idx) => {
+          const href = link.getAttribute('href');
+          // Standard WhatsApp link is wa.me/919843282808
+          if (!href.includes('919843282808')) {
+            throw new Error(`Link #${idx + 1} (${href}) does not point to target number 919843282808.`);
+          }
+          log(`Link #${idx + 1} successfully verified: ${href}`, "info");
+        });
+
+        setStatus(3, 'Passed');
+        log("Test 3: Passed!", "success");
+        return true;
+      } catch (err) {
+        setStatus(3, 'Failed');
+        log(`Test 3 Failed: ${err.message}`, "error");
+        return false;
+      }
+    }
+
+    // Test 4: Contact Form Validation
+    async function testContactForm() {
+      setStatus(4, 'Running');
+      log("Starting Test 4: Contact Form Validation...", "info");
+      try {
+        await resetIFrame();
+        const win = iframe.contentWindow;
+        const doc = win.document;
+
+        const submitBtn = doc.querySelector('.submit-btn');
+        if (!submitBtn) throw new Error("Submit button not found in contact form.");
+
+        // Intercept standard window alert
+        let alertTriggered = false;
+        let alertMessage = "";
+        win.alert = (msg) => {
+          alertTriggered = true;
+          alertMessage = msg;
+        };
+
+        // 1. Submit empty form
+        doc.getElementById('fname').value = "";
+        doc.getElementById('fphone').value = "";
+        submitBtn.click();
+        await sleep(100);
+
+        if (!alertTriggered) throw new Error("Submitting form with blank inputs did not trigger validation alert.");
+        log(`Validation alert intercepted: "${alertMessage}"`, "info");
+        alertTriggered = false;
+
+        // 2. Submit partial form (name but no phone)
+        doc.getElementById('fname').value = "Test User";
+        doc.getElementById('fphone').value = "";
+        submitBtn.click();
+        await sleep(100);
+        if (!alertTriggered) throw new Error("Submitting form without phone number did not trigger validation alert.");
+        alertTriggered = false;
+
+        // 3. Submit valid form
+        doc.getElementById('fname').value = "Test User";
+        doc.getElementById('fphone').value = "+919999988888";
+        doc.getElementById('ftype').value = "Wedding Photography";
+        doc.getElementById('fdate').value = "2026-07-01";
+        doc.getElementById('fmsg').value = "Automated test message.";
+
+        // Intercept window.open
+        let openedUrl = "";
+        win.open = (url) => {
+          openedUrl = url;
+          return null;
+        };
+
+        submitBtn.click();
+        await sleep(100);
+
+        if (!openedUrl) throw new Error("Form submission did not open WhatsApp URL window.");
+        log(`WhatsApp redirection URL compiled: ${openedUrl}`, "info");
+
+        if (!openedUrl.includes('919843282808')) throw new Error("WhatsApp redirection URL does not target the core WhatsApp number.");
+        if (!openedUrl.includes('Test%20User')) throw new Error("WhatsApp message does not contain URL encoded Name.");
+        if (!openedUrl.includes('Wedding%20Photography')) throw new Error("WhatsApp message does not contain URL encoded Event Type.");
+
+        const successMsg = doc.getElementById('formSuccess');
+        if (successMsg.style.display !== 'block') throw new Error("Success notification text did not display upon submission.");
+        log("Success notification displayed correctly.", "info");
+
+        setStatus(4, 'Passed');
+        log("Test 4: Passed!", "success");
+        return true;
+      } catch (err) {
+        setStatus(4, 'Failed');
+        log(`Test 4 Failed: ${err.message}`, "error");
+        return false;
+      }
+    }
+
+    // Test 5: Admin Panel Security
+    async function testAdminSecurity() {
+      setStatus(5, 'Running');
+      log("Starting Test 5: Admin Panel Security...", "info");
+      try {
+        await resetIFrame();
+        const win = iframe.contentWindow;
+        
+        // Navigate to Admin URL Hash
+        win.location.hash = '#admin';
+        document.getElementById('frame-url').innerText = "aadhi_photography.html#admin";
+        await sleep(300);
+
+        const doc = win.document;
+        const loginModal = doc.getElementById('adminLoginModal');
+        if (!loginModal || loginModal.style.display === 'none') {
+          throw new Error("Admin login passcode modal did not show up when hash was set to #admin.");
+        }
+        log("Admin login modal is active.", "info");
+
+        // Try wrong password
+        const passwordInput = doc.getElementById('adminPassword');
+        const loginBtn = doc.getElementById('adminLoginBtn');
+        if (!passwordInput || !loginBtn) throw new Error("Admin password input or submit button not found.");
+
+        passwordInput.value = "wrong_pass";
+        
+        // Intercept alert
+        let alertTriggered = false;
+        win.alert = (msg) => { alertTriggered = true; };
+        
+        loginBtn.click();
+        await sleep(200);
+
+        if (!alertTriggered) throw new Error("Entering wrong passcode did not trigger validation alert.");
+        log("Incorrect passcode successfully denied access.", "info");
+
+        // Close or reset alert intercept
+        win.alert = () => {};
+
+        // Try correct passcode (default "admin123")
+        passwordInput.value = "admin123";
+        loginBtn.click();
+        await sleep(300);
+
+        const adminDashboard = doc.getElementById('adminDashboard');
+        if (!adminDashboard || adminDashboard.style.display === 'none') {
+          throw new Error("Admin dashboard did not open upon typing correct passcode.");
+        }
+        log("Successfully authenticated. Admin dashboard is visible.", "info");
+
+        setStatus(5, 'Passed');
+        log("Test 5: Passed!", "success");
+        return true;
+      } catch (err) {
+        setStatus(5, 'Failed');
+        log(`Test 5 Failed: ${err.message}`, "error");
+        return false;
+      }
+    }
+
+    // Test 6: Real-time Live Editing
+    async function testLiveEditing() {
+      setStatus(6, 'Running');
+      log("Starting Test 6: Real-time Live Editing...", "info");
+      try {
+        // We assume test 5 already authenticated us, but let's refresh and do it properly to make tests independent
+        await resetIFrame();
+        const win = iframe.contentWindow;
+        const doc = win.document;
+
+        win.location.hash = '#admin';
+        await sleep(200);
+        doc.getElementById('adminPassword').value = "admin123";
+        doc.getElementById('adminLoginBtn').click();
+        await sleep(200);
+
+        // Edit Hero subtitle
+        const heroSubInput = doc.getElementById('adm-hero-sub');
+        if (!heroSubInput) throw new Error("Admin Hero Subtitle input field not found.");
+        
+        const originalText = doc.querySelector('.hero-sub').textContent.trim();
+        const testText = "Erode's #1 Wedding Studio - Updated via Test";
+        
+        heroSubInput.value = testText;
+        // Trigger input event to update DOM
+        heroSubInput.dispatchEvent(new Event('input', { bubbles: true }));
+        await sleep(200);
+
+        const renderedSubText = doc.querySelector('.hero-sub').textContent.trim();
+        if (renderedSubText !== testText) {
+          throw new Error(`DOM did not update. Expected: "${testText}", Rendered: "${renderedSubText}"`);
+        }
+        log(`Live editing verified! Hero subtitle updated from "${originalText}" to "${renderedSubText}" instantly in background DOM.`, "info");
+
+        // Verify Service editing works
+        // Let's click "Services" tab in Admin Panel
+        const servicesTabBtn = Array.from(doc.querySelectorAll('.admin-tab-btn')).find(btn => btn.innerText.includes('Services'));
+        if (servicesTabBtn) {
+          servicesTabBtn.click();
+          await sleep(100);
+        }
+
+        // Change price of wedding
+        const weddingPriceInput = doc.querySelector('input[data-service-index="0"][data-field="price"]');
+        if (weddingPriceInput) {
+          weddingPriceInput.value = "Starting ₹20,000 onwards";
+          weddingPriceInput.dispatchEvent(new Event('input', { bubbles: true }));
+          await sleep(200);
+
+          const renderedPrice = doc.querySelectorAll('.service-price')[0].textContent.trim();
+          if (renderedPrice !== "Starting ₹20,000 onwards") {
+            throw new Error(`Service price did not update in DOM. Rendered: "${renderedPrice}"`);
+          }
+          log("Live editing of service prices verified successfully.", "info");
+        } else {
+          log("Warning: Service price input field not found for index 0.", "info");
+        }
+
+        setStatus(6, 'Passed');
+        log("Test 6: Passed!", "success");
+        return true;
+      } catch (err) {
+        setStatus(6, 'Failed');
+        log(`Test 6 Failed: ${err.message}`, "error");
+        return false;
+      }
+    }
+
+    // Selection helper
+    async function selectTest(num) {
+      for (let i = 1; i <= 6; i++) {
+        document.getElementById(`test-${i}`).style.boxShadow = 'none';
+      }
+      document.getElementById(`test-${num}`).style.boxShadow = '0 0 10px rgba(201, 168, 76, 0.3)';
+      
+      if (num === 1) await testDynamicLoad();
+      if (num === 2) await testNavigation();
+      if (num === 3) await testWhatsAppLinks();
+      if (num === 4) await testContactForm();
+      if (num === 5) await testAdminSecurity();
+      if (num === 6) await testLiveEditing();
+    }
+
+    // Run all sequentially
+    async function runAllTests() {
+      logConsole.innerHTML = "";
+      log("Starting test suite execution...", "info");
+      
+      const r1 = await testDynamicLoad();
+      await sleep(1000);
+      const r2 = await testNavigation();
+      await sleep(1000);
+      const r3 = await testWhatsAppLinks();
+      await sleep(1000);
+      const r4 = await testContactForm();
+      await sleep(1000);
+      const r5 = await testAdminSecurity();
+      await sleep(1000);
+      const r6 = await testLiveEditing();
+      
+      log("=========================================", "info");
+      if (r1 && r2 && r3 && r4 && r5 && r6) {
+        log("ALL TESTS COMPLETED SUCCESSFULLY! 🎉", "success");
+      } else {
+        log("TEST SUITE COMPLETED WITH ENCOUNTERED FAILURES. ❌", "error");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -8,12 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <!-- Load Supabase JS Client library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --gold: #c9a84c;
       --dark: #1a1a1a;
       --mid: #5a5a5a;
+      --success: #2ecc71;
+      --error: #e74c3c;
     }
     html { scroll-behavior: smooth; }
     body {
@@ -44,7 +48,7 @@
       text-decoration: none;
     }
     .logo span { color: var(--gold); }
-    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
     .nav-links a {
       font-size: 0.8rem;
       letter-spacing: 1.5px;
@@ -152,7 +156,7 @@
     /* ── SERVICES ── */
     .services-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1px;
       background: rgba(255,255,255,0.07);
       border: 0.5px solid rgba(255,255,255,0.07);
@@ -207,7 +211,7 @@
       display: block;
     }
     .gallery-item:hover img { transform: scale(1.05); }
-    .gallery-item.tall { grid-row: span 2; aspect-ratio: auto; }
+    .gallery-item.tall { grid-row: span 2; aspect-ratio: auto; min-height: 400px; }
     .gallery-ph {
       width: 100%;
       height: 100%;
@@ -331,6 +335,194 @@
     }
     footer p { font-size: 0.78rem; color: rgba(255,255,255,0.3); letter-spacing: 0.5px; }
     footer a { color: var(--gold); text-decoration: none; font-size: 0.78rem; }
+    .footer-ctas { display: flex; gap: 2rem; align-items: center; }
+
+    /* ── ADMIN PANEL OVERLAY STYLES ── */
+    .admin-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+    }
+    .admin-modal-content {
+      background: #181818;
+      border: 0.5px solid rgba(255,255,255,0.12);
+      border-radius: 4px;
+      width: 100%;
+      max-width: 900px;
+      height: 85vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .passcode-box {
+      max-width: 380px;
+      height: auto;
+      padding: 2rem;
+      text-align: center;
+    }
+    .admin-modal-close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 24px;
+      color: #aaa;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .admin-modal-close:hover { color: var(--gold); }
+    
+    .admin-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 0.5px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .admin-header h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold); }
+    
+    .admin-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .admin-tabs {
+      width: 200px;
+      border-right: 0.5px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      background: #151515;
+      overflow-y: auto;
+    }
+    .admin-tab-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.6);
+      padding: 15px 20px;
+      text-align: left;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      outline: none;
+    }
+    .admin-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
+    .admin-tab-btn.active { color: var(--gold); background: rgba(201, 168, 76, 0.05); border-left-color: var(--gold); }
+    
+    .admin-tab-content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+      display: none;
+    }
+    .admin-tab-content.active { display: block; }
+    
+    .admin-field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+    .admin-field-group { margin-bottom: 1.5rem; }
+    .admin-field-group label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 6px;
+    }
+    .admin-field-group input,
+    .admin-field-group textarea,
+    .admin-field-group select {
+      width: 100%;
+      background: #222;
+      border: 0.5px solid rgba(255,255,255,0.15);
+      color: #fff;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      border-radius: 2px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .admin-field-group input:focus,
+    .admin-field-group textarea:focus,
+    .admin-field-group select:focus { border-color: var(--gold); }
+    .admin-field-group textarea { resize: vertical; min-height: 70px; }
+    
+    .admin-list-item {
+      background: #222;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      padding: 1.2rem;
+      border-radius: 2px;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .admin-list-item .remove-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--error);
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      outline: none;
+    }
+    .admin-list-item .remove-btn:hover { text-decoration: underline; }
+    
+    .admin-footer {
+      padding: 1.5rem 2rem;
+      border-top: 0.5px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #151515;
+    }
+    
+    .admin-actions { display: flex; gap: 1rem; }
+    
+    .btn-db-status {
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,255,255,0.4);
+    }
+    .btn-db-status.connected { color: var(--success); }
+    .btn-db-status.failed { color: var(--error); }
+    .btn-db-status i { font-size: 14px; }
+
+    .btn-add {
+      background: transparent;
+      border: 1px dashed var(--gold);
+      color: var(--gold);
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      margin-bottom: 1.5rem;
+      transition: all 0.2s;
+    }
+    .btn-add:hover { background: rgba(201, 168, 76, 0.05); }
 
     /* ── MOBILE ── */
     @media (max-width: 768px) {
@@ -343,8 +535,16 @@
       .section, .why-section, .testi-section, #contact { padding: 3rem 1.5rem; }
       .services-grid, .why-grid, .testi-grid, .contact-box { grid-template-columns: 1fr; }
       .gallery-grid { grid-template-columns: repeat(2, 1fr); }
-      .gallery-item.tall { grid-row: span 1; aspect-ratio: 1; }
+      .gallery-item.tall { grid-row: span 1; aspect-ratio: 1; min-height: auto; }
       footer { flex-direction: column; text-align: center; padding: 1.5rem; }
+      .footer-ctas { flex-direction: column; gap: 1rem; }
+      
+      .admin-modal-content { height: 95vh; }
+      .admin-body { flex-direction: column; }
+      .admin-tabs { width: 100%; height: 50px; flex-direction: row; border-right: none; border-bottom: 0.5px solid rgba(255,255,255,0.08); }
+      .admin-tab-btn { padding: 10px 15px; font-size: 0.75rem; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+      .admin-tab-btn.active { border-bottom-color: var(--gold); }
+      .admin-field-row { grid-template-columns: 1fr; gap: 0; }
     }
   </style>
 </head>
@@ -352,13 +552,13 @@
 
   <!-- NAV -->
   <nav>
-    <a href="#home" class="logo">Aadhi <span>Photography</span></a>
+    <a href="#home" class="logo" id="navLogo">Aadhi <span>Photography</span></a>
     <ul class="nav-links" id="navLinks">
       <li><a href="#services">Services</a></li>
       <li><a href="#gallery">Gallery</a></li>
       <li><a href="#testimonials">Reviews</a></li>
       <li><a href="#contact">Contact</a></li>
-      <li><a href="https://wa.me/919843282808" class="nav-cta" target="_blank">Book Now</a></li>
+      <li><a href="https://wa.me/919843282808" class="nav-cta" id="navCTA" target="_blank">Book Now</a></li>
     </ul>
     <button class="hamburger" id="hamburger" aria-label="Toggle menu">
       <i class="ti ti-menu-2"></i>
@@ -368,26 +568,15 @@
   <!-- HERO -->
   <section id="home">
     <div class="hero">
-      <div class="hero-badge">25+ Years of Excellence</div>
-      <h1>Capturing <em>Moments</em><br>That Last Forever</h1>
-      <p class="hero-sub">Wedding &amp; Portrait Photography &nbsp;·&nbsp; Erode, Tamil Nadu</p>
-      <a href="https://wa.me/919843282808" class="hero-cta" target="_blank">
+      <div class="hero-badge" id="heroBadge">25+ Years of Excellence</div>
+      <h1 id="heroTitle">Capturing <em>Moments</em><br>That Last Forever</h1>
+      <p class="hero-sub" id="heroSub">Wedding &amp; Portrait Photography &nbsp;·&nbsp; Erode, Tamil Nadu</p>
+      <a href="https://wa.me/919843282808" class="hero-cta" id="heroCTA" target="_blank">
         <i class="ti ti-brand-whatsapp"></i>
         Book a Session
       </a>
-      <div class="hero-stats">
-        <div>
-          <div class="stat-num">25+</div>
-          <div class="stat-label">Years Experience</div>
-        </div>
-        <div>
-          <div class="stat-num">500+</div>
-          <div class="stat-label">Weddings Shot</div>
-        </div>
-        <div>
-          <div class="stat-num">1000+</div>
-          <div class="stat-label">Happy Clients</div>
-        </div>
+      <div class="hero-stats" id="heroStats">
+        <!-- Stats populated dynamically -->
       </div>
     </div>
   </section>
@@ -396,54 +585,17 @@
   <section id="services" class="section">
     <div class="section-tag">What We Offer</div>
     <div class="section-title">Our Services</div>
-    <div class="services-grid">
-      <div class="service-card">
-        <div class="service-icon"><i class="ti ti-heart"></i></div>
-        <h3>Wedding Photography</h3>
-        <p>Complete wedding coverage — mehendi, engagement, wedding ceremony, and reception. Every precious moment documented with care and artistry.</p>
-        <div class="service-price">Starting ₹15,000 onwards</div>
-      </div>
-      <div class="service-card">
-        <div class="service-icon"><i class="ti ti-users"></i></div>
-        <h3>Portrait &amp; Family</h3>
-        <p>Professional portraits for individuals, couples, and families. Studio and outdoor sessions available across Erode and nearby areas.</p>
-        <div class="service-price">Starting ₹3,000 onwards</div>
-      </div>
-      <div class="service-card">
-        <div class="service-icon"><i class="ti ti-sparkles"></i></div>
-        <h3>Pre-wedding Shoots</h3>
-        <p>Cinematic pre-wedding sessions at premium locations. Relaxed, creative, and fully customised to your love story.</p>
-        <div class="service-price">Starting ₹8,000 onwards</div>
-      </div>
-      <div class="service-card">
-        <div class="service-icon"><i class="ti ti-baby-carriage"></i></div>
-        <h3>Baby &amp; Maternity</h3>
-        <p>Gentle, heartwarming photos of your newborn and maternity milestones. Studio setup with safe and comfortable lighting.</p>
-        <div class="service-price">Starting ₹4,000 onwards</div>
-      </div>
+    <div class="services-grid" id="servicesGrid">
+      <!-- Services cards populated dynamically -->
     </div>
   </section>
 
   <!-- WHY US -->
   <section class="why-section">
-    <div class="section-tag">Why Choose Us</div>
-    <div class="section-title">Trusted by Families Across Erode</div>
-    <div class="why-grid">
-      <div class="why-item">
-        <i class="ti ti-camera"></i>
-        <h4>25+ Years Experience</h4>
-        <p>Decades of skill with thousands of moments captured across all types of events and families.</p>
-      </div>
-      <div class="why-item">
-        <i class="ti ti-clock"></i>
-        <h4>On-time Delivery</h4>
-        <p>Edited photos delivered within 7–10 days. No long waits, no excuses.</p>
-      </div>
-      <div class="why-item">
-        <i class="ti ti-mood-smile"></i>
-        <h4>Personal Touch</h4>
-        <p>Family-run studio that treats every client like our own family with full attention.</p>
-      </div>
+    <div class="section-tag" id="whyTag">Why Choose Us</div>
+    <div class="section-title" id="whyTitle">Trusted by Families Across Erode</div>
+    <div class="why-grid" id="whyGrid">
+      <!-- Why choose us items populated dynamically -->
     </div>
   </section>
 
@@ -451,68 +603,18 @@
   <section id="gallery" class="section">
     <div class="section-tag">Our Work</div>
     <div class="section-title">Portfolio</div>
-    <div class="gallery-grid">
-      <!--
-        TO ADD YOUR PHOTOS:
-        Replace each <div class="gallery-ph">...</div> with:
-        <img src="your-photo.jpg" alt="description" />
-
-        Example:
-        <div class="gallery-item tall">
-          <img src="wedding1.jpg" alt="Wedding photography Erode" />
-        </div>
-      -->
-      <div class="gallery-item tall" style="background:#2a2420;">
-        <div class="gallery-ph"><i class="ti ti-camera"></i><span>Wedding</span></div>
-      </div>
-      <div class="gallery-item" style="background:#202428;">
-        <div class="gallery-ph"><i class="ti ti-user"></i><span>Portrait</span></div>
-      </div>
-      <div class="gallery-item" style="background:#1e2420;">
-        <div class="gallery-ph"><i class="ti ti-heart"></i><span>Couple</span></div>
-      </div>
-      <div class="gallery-item" style="background:#252020;">
-        <div class="gallery-ph"><i class="ti ti-users"></i><span>Family</span></div>
-      </div>
-      <div class="gallery-item" style="background:#20252a;">
-        <div class="gallery-ph"><i class="ti ti-sparkles"></i><span>Pre-wedding</span></div>
-      </div>
-      <div class="gallery-item" style="background:#222a20;">
-        <div class="gallery-ph"><i class="ti ti-baby-carriage"></i><span>Baby</span></div>
-      </div>
+    <div class="gallery-grid" id="galleryGrid">
+      <!-- Gallery items populated dynamically -->
     </div>
-    <p class="gallery-note">* Replace placeholder boxes above with your actual photos. See comments in the HTML.</p>
+    <p class="gallery-note">* Real-time images can be added via image URLs in the Admin Panel.</p>
   </section>
 
   <!-- TESTIMONIALS -->
   <section id="testimonials" class="testi-section">
     <div class="section-tag">Client Stories</div>
     <div class="section-title">What Families Say</div>
-    <div class="testi-grid">
-      <div class="testi-card">
-        <div class="stars">★★★★★</div>
-        <p class="testi-text">"Our wedding photos are absolutely stunning. Every little detail captured so beautifully — we keep looking at the album again and again."</p>
-        <div class="testi-name">Kavitha &amp; Arun</div>
-        <div class="testi-event">Wedding, 2023 · Erode</div>
-      </div>
-      <div class="testi-card">
-        <div class="stars">★★★★★</div>
-        <p class="testi-text">"Best family photoshoot experience we've had. Very patient with the kids, great with posing, and photos came out better than we expected!"</p>
-        <div class="testi-name">Priya Raman</div>
-        <div class="testi-event">Family Portrait · Erode</div>
-      </div>
-      <div class="testi-card">
-        <div class="stars">★★★★★</div>
-        <p class="testi-text">"Pre-wedding shoot was magical. He knows the best locations and makes you feel so comfortable in front of the camera. Highly recommend!"</p>
-        <div class="testi-name">Deepa &amp; Karthik</div>
-        <div class="testi-event">Pre-wedding Shoot · Salem</div>
-      </div>
-      <div class="testi-card">
-        <div class="stars">★★★★★</div>
-        <p class="testi-text">"The newborn shoot was so gentle and beautiful. Every pose, every little moment with our baby was captured perfectly. Memories for a lifetime!"</p>
-        <div class="testi-name">Meena Suresh</div>
-        <div class="testi-event">Baby Shoot · Erode</div>
-      </div>
+    <div class="testi-grid" id="testimonialsGrid">
+      <!-- Testimonials cards populated dynamically -->
     </div>
   </section>
 
@@ -521,31 +623,15 @@
     <div class="section-tag">Get in Touch</div>
     <div class="section-title">Book Your Session</div>
     <div class="contact-box">
-      <div class="contact-info">
-        <p>
-          Based in Erode, Tamil Nadu.<br>
-          Available for weddings across Erode, Coimbatore, Salem, Tiruppur and nearby districts.<br><br>
-          <strong style="color:#fff;font-weight:500;">Studio Address:</strong><br>
-          [Your Studio Address Here]<br>
-          Erode, Tamil Nadu<br><br>
-          <strong style="color:#fff;font-weight:500;">Phone / WhatsApp:</strong><br>
-          +91 9843282808
-        </p>
-        <a href="https://wa.me/919843282808" class="contact-btn" target="_blank">
-          <i class="ti ti-brand-whatsapp"></i>
-          Chat on WhatsApp
-        </a>
+      <div class="contact-info" id="contactInfo">
+        <!-- Contact details populated dynamically -->
       </div>
       <div class="contact-form">
         <input type="text" id="fname" placeholder="Your name" required />
         <input type="tel" id="fphone" placeholder="Phone number" required />
         <select id="ftype">
           <option value="" disabled selected>Event type</option>
-          <option>Wedding Photography</option>
-          <option>Portrait / Family</option>
-          <option>Pre-wedding Shoot</option>
-          <option>Baby / Maternity</option>
-          <option>Other</option>
+          <!-- Options populated dynamically from services -->
         </select>
         <input type="text" id="fdate" placeholder="Preferred date (if known)" />
         <textarea id="fmsg" placeholder="Tell us about your shoot..."></textarea>
@@ -559,26 +645,595 @@
 
   <!-- FOOTER -->
   <footer>
-    <p>© 2025 Aadhi Photography · Erode, Tamil Nadu</p>
-    <p>25+ Years of Capturing Memories</p>
-    <a href="https://wa.me/919843282808" target="_blank">
-      <i class="ti ti-brand-whatsapp" style="vertical-align:-2px;margin-right:4px;"></i>
-      WhatsApp Us
-    </a>
+    <p id="footerCopyright">© 2025 Aadhi Photography · Erode, Tamil Nadu</p>
+    <p id="footerBadge">25+ Years of Capturing Memories</p>
+    <div class="footer-ctas">
+      <a href="https://wa.me/919843282808" id="footerCTA" target="_blank">
+        <i class="ti ti-brand-whatsapp" style="vertical-align:-2px;margin-right:4px;"></i>
+        WhatsApp Us
+      </a>
+      <a href="#admin" style="opacity:0.25; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase;" id="footerAdminLink">Admin Mode</a>
+    </div>
   </footer>
 
+  <!-- ADMIN: PASSCODE LOGIN MODAL -->
+  <div id="adminLoginModal" class="admin-modal" style="display: none;">
+    <div class="admin-modal-content passcode-box">
+      <span class="admin-modal-close" onclick="closeAdminModal()">&times;</span>
+      <h3 style="font-family:'Playfair Display', serif; font-size:1.4rem; margin-bottom:0.8rem; color:var(--gold);">Admin Mode</h3>
+      <p style="font-size:0.82rem; color:rgba(255,255,255,0.5); margin-bottom:1.5rem;">Enter the passcode to modify site content locally.</p>
+      <input type="password" id="adminPassword" placeholder="Passcode (default: admin123)" style="width:100%; padding:10px 12px; background:#222; border:0.5px solid rgba(255,255,255,0.15); color:#fff; border-radius:2px; margin-bottom:1rem; outline:none; text-align:center;" />
+      <button class="submit-btn" id="adminLoginBtn" onclick="loginAdminLocal()" style="width:100%;">Unlock Settings</button>
+    </div>
+  </div>
+
+  <!-- ADMIN: MAIN DASHBOARD MODAL -->
+  <div id="adminDashboard" class="admin-modal" style="display: none;">
+    <div class="admin-modal-content">
+      <span class="admin-modal-close" onclick="closeAdminModal()">&times;</span>
+      
+      <div class="admin-header">
+        <h2>Admin Dashboard</h2>
+        <div class="btn-db-status" id="db-status-badge">
+          <i class="ti ti-database-off"></i> <span>Offline Mode</span>
+        </div>
+      </div>
+      
+      <div class="admin-body">
+        <!-- Tabs Sidebar -->
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" onclick="switchAdminTab('general')">General &amp; Hero</button>
+          <button class="admin-tab-btn" onclick="switchAdminTab('services')">Services</button>
+          <button class="admin-tab-btn" onclick="switchAdminTab('gallery')">Gallery</button>
+          <button class="admin-tab-btn" onclick="switchAdminTab('testimonials')">Testimonials</button>
+          <button class="admin-tab-btn" onclick="switchAdminTab('database')">Database Setup</button>
+        </div>
+        
+        <!-- Tab Content: General -->
+        <div class="admin-tab-content active" id="tab-general">
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Logo Main Text</label>
+              <input type="text" id="adm-logo-text" oninput="updateGeneralField('logo', 'text', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Logo Highlight</label>
+              <input type="text" id="adm-logo-highlight" oninput="updateGeneralField('logo', 'highlight', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>WhatsApp Contact Number (with country code)</label>
+              <input type="text" id="adm-whatsapp" oninput="updateGeneralField('whatsapp', null, this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Hero Badge</label>
+              <input type="text" id="adm-hero-badge" oninput="updateGeneralField('hero', 'badge', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <label>Hero Title Prefix</label>
+            <input type="text" id="adm-hero-before" oninput="updateGeneralField('hero', 'title_before', this.value)" />
+          </div>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Hero Title Italic</label>
+              <input type="text" id="adm-hero-em" oninput="updateGeneralField('hero', 'title_em', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Hero Title Suffix</label>
+              <input type="text" id="adm-hero-after" oninput="updateGeneralField('hero', 'title_after', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <label>Hero Subtitle</label>
+            <input type="text" id="adm-hero-sub" oninput="updateGeneralField('hero', 'subtitle', this.value)" />
+          </div>
+          
+          <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1.5px; border-bottom:0.5px solid rgba(255,255,255,0.08); padding-bottom:6px; margin:1.5rem 0 1rem; color:var(--gold);">Statistics Counter</h4>
+          <div id="adm-stats-list"></div>
+          
+          <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1.5px; border-bottom:0.5px solid rgba(255,255,255,0.08); padding-bottom:6px; margin:1.5rem 0 1rem; color:var(--gold);">Studio Contact Info</h4>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Phone Display Text</label>
+              <input type="text" id="adm-contact-phone" oninput="updateGeneralField('contact', 'phone', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Studio Email</label>
+              <input type="text" id="adm-contact-email" oninput="updateGeneralField('contact', 'email', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <label>Studio Address</label>
+            <textarea id="adm-contact-address" oninput="updateGeneralField('contact', 'address', this.value)"></textarea>
+          </div>
+          <div class="admin-field-group">
+            <label>Areas Covered description</label>
+            <textarea id="adm-contact-location" oninput="updateGeneralField('contact', 'location', this.value)"></textarea>
+          </div>
+        </div>
+        
+        <!-- Tab Content: Services -->
+        <div class="admin-tab-content" id="tab-services">
+          <div id="adm-services-list"></div>
+          <button class="btn-add" onclick="addNewService()"><i class="ti ti-plus"></i> Add New Service</button>
+        </div>
+        
+        <!-- Tab Content: Gallery -->
+        <div class="admin-tab-content" id="tab-gallery">
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.4); margin-bottom:1.5rem;">Configure the image placeholders with real URLs. Keep the URL blank to show the placeholder icon.</p>
+          <div id="adm-gallery-list"></div>
+          <button class="btn-add" onclick="addNewGalleryItem()"><i class="ti ti-plus"></i> Add Gallery Item</button>
+        </div>
+        
+        <!-- Tab Content: Testimonials -->
+        <div class="admin-tab-content" id="tab-testimonials">
+          <div id="adm-testimonials-list"></div>
+          <button class="btn-add" onclick="addNewTestimonial()"><i class="ti ti-plus"></i> Add Customer Review</button>
+        </div>
+        
+        <!-- Tab Content: Database Setup -->
+        <div class="admin-tab-content" id="tab-database">
+          <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:1rem; color:var(--gold);">1. Cloud Credentials</h4>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.5); margin-bottom:1.5rem;">To connect your portfolio to a free database, enter your Supabase credentials here. This enables real-time edits without files downloading.</p>
+          
+          <div class="admin-field-group">
+            <label>Supabase Project URL</label>
+            <input type="text" id="db-url-input" placeholder="https://yourproject.supabase.co" />
+          </div>
+          <div class="admin-field-group">
+            <label>Supabase Anon API Key</label>
+            <input type="password" id="db-key-input" placeholder="eyJhbGciOi..." />
+          </div>
+          
+          <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1.5px; margin:2rem 0 1rem; color:var(--gold);">2. Admin User Authentication</h4>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.5); margin-bottom:1.5rem;">Register or log in with your Supabase email &amp; password to save changes securely to the cloud.</p>
+          
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Admin Email</label>
+              <input type="email" id="db-email-input" placeholder="admin@example.com" />
+            </div>
+            <div class="admin-field-group">
+              <label>Admin Password</label>
+              <input type="password" id="db-pass-input" placeholder="••••••••" />
+            </div>
+          </div>
+          
+          <div style="display:flex; gap:1rem;">
+            <button class="submit-btn" style="background:#555; color:#fff;" onclick="registerSupabaseAdmin()">Sign Up Admin</button>
+            <button class="submit-btn" onclick="connectAndLoginSupabase()">Sign In &amp; Connect</button>
+          </div>
+
+          <h4 style="font-size:0.85rem; text-transform:uppercase; letter-spacing:1.5px; margin:2rem 0 0.8rem; color:var(--gold);">3. Initial SQL Schema Setup</h4>
+          <p style="font-size:0.82rem; color:rgba(255,255,255,0.5); margin-bottom:1rem;">Before connecting, make sure you created the table in your Supabase SQL Editor. Locate the SQL script in <code style="color:var(--gold)">database_setup.sql</code> in your project directory.</p>
+        </div>
+      </div>
+      
+      <div class="admin-footer">
+        <button class="submit-btn" style="background:#444; color:#fff;" onclick="exportHTML()">
+          <i class="ti ti-download" style="vertical-align:-1px;"></i> Export HTML Code
+        </button>
+        <div class="admin-actions">
+          <button class="submit-btn" style="background:#444; color:#fff;" onclick="closeAdminModal()">Close Preview</button>
+          <button class="submit-btn" id="db-sync-btn" onclick="syncDataToSupabase()" style="display:none;">
+            <i class="ti ti-cloud-upload"></i> Sync to Database
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Mobile menu toggle
+    // Safe LocalStorage wrapper to prevent SecurityError under restricted environments (like file:// protocol iframes)
+    const storage = {
+      getItem(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          console.warn("storage.getItem access denied:", e);
+          return null;
+        }
+      },
+      setItem(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {
+          console.warn("storage.setItem access denied:", e);
+        }
+      },
+      removeItem(key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          console.warn("storage.removeItem access denied:", e);
+        }
+      }
+    };
+
+    // --- CONFIGURATION MANAGEMENT ---
+    // Note: Do not remove the surrounding comment flags. They are used by the HTML Export function.
+    /* === CONFIGURATION START === */
+    let SUPABASE_URL = "";
+    let SUPABASE_ANON_KEY = "";
+    let SITE_DATA = {
+  "logo": {
+    "text": "Aadhi",
+    "highlight": "Photography"
+  },
+  "whatsapp": "919843282808",
+  "hero": {
+    "badge": "25+ Years of Excellence",
+    "title_em": "Moments",
+    "title_before": "Capturing",
+    "title_after": "That Last Forever",
+    "subtitle": "Wedding & Portrait Photography · Erode, Tamil Nadu",
+    "stats": [
+      {
+        "num": "25+",
+        "label": "Years Experience"
+      },
+      {
+        "num": "500+",
+        "label": "Weddings Shot"
+      },
+      {
+        "num": "1000+",
+        "label": "Happy Clients"
+      }
+    ]
+  },
+  "services": [
+    {
+      "icon": "ti-heart",
+      "title": "Wedding Photography",
+      "desc": "Complete wedding coverage — mehendi, engagement, wedding ceremony, and reception. Every precious moment documented with care and artistry.",
+      "price": "Starting ₹15,000 onwards"
+    },
+    {
+      "icon": "ti-users",
+      "title": "Portrait & Family",
+      "desc": "Professional portraits for individuals, couples, and families. Studio and outdoor sessions available across Erode and nearby areas.",
+      "price": "Starting ₹3,000 onwards"
+    },
+    {
+      "icon": "ti-sparkles",
+      "title": "Pre-wedding Shoots",
+      "desc": "Cinematic pre-wedding sessions at premium locations. Relaxed, creative, and fully customised to your love story.",
+      "price": "Starting ₹8,000 onwards"
+    },
+    {
+      "icon": "ti-baby-carriage",
+      "title": "Baby & Maternity",
+      "desc": "Gentle, heartwarming photos of your newborn and maternity milestones. Studio setup with safe and comfortable lighting.",
+      "price": "Starting ₹4,000 onwards"
+    }
+  ],
+  "whyUs": {
+    "tag": "Why Choose Us",
+    "title": "Trusted by Families Across Erode",
+    "items": [
+      {
+        "icon": "ti-camera",
+        "title": "25+ Years Experience",
+        "desc": "Decades of skill with thousands of moments captured across all types of events and families."
+      },
+      {
+        "icon": "ti-clock",
+        "title": "On-time Delivery",
+        "desc": "Edited photos delivered within 7–10 days. No long waits, no excuses."
+      },
+      {
+        "icon": "ti-mood-smile",
+        "title": "Personal Touch",
+        "desc": "Family-run studio that treats every client like our own family with full attention."
+      }
+    ]
+  },
+  "gallery": [
+    {
+      "bg": "#2a2420",
+      "img": "",
+      "icon": "ti-camera",
+      "class": "tall",
+      "category": "Wedding"
+    },
+    {
+      "bg": "#202428",
+      "img": "",
+      "icon": "ti-user",
+      "class": "",
+      "category": "Portrait"
+    },
+    {
+      "bg": "#1e2420",
+      "img": "",
+      "icon": "ti-heart",
+      "class": "",
+      "category": "Couple"
+    },
+    {
+      "bg": "#252020",
+      "img": "",
+      "icon": "ti-users",
+      "class": "",
+      "category": "Family"
+    },
+    {
+      "bg": "#20252a",
+      "img": "",
+      "icon": "ti-sparkles",
+      "class": "",
+      "category": "Pre-wedding"
+    },
+    {
+      "bg": "#222a20",
+      "img": "",
+      "icon": "ti-baby-carriage",
+      "class": "",
+      "category": "Baby"
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Kavitha & Arun",
+      "stars": "★★★★★",
+      "event": "Wedding, 2023 · Erode",
+      "content": "\"Our wedding photos are absolutely stunning. Every little detail captured so beautifully — we keep looking at the album again and again.\""
+    },
+    {
+      "name": "Priya Raman",
+      "stars": "★★★★★",
+      "event": "Family Portrait · Erode",
+      "content": "\"Best family photoshoot experience we've had. Very patient with the kids, great with posing, and photos came out better than we expected!\""
+    },
+    {
+      "name": "Deepa & Karthik",
+      "stars": "★★★★★",
+      "event": "Pre-wedding Shoot · Salem",
+      "content": "\"Pre-wedding shoot was magical. He knows the best locations and makes you feel so comfortable in front of the camera. Highly recommend!\""
+    },
+    {
+      "name": "Meena Suresh",
+      "stars": "★★★★★",
+      "event": "Baby Shoot · Erode",
+      "content": "\"The newborn shoot was so gentle and beautiful. Every pose, every little moment with our baby was captured perfectly. Memories for a lifetime!\""
+    }
+  ],
+  "contact": {
+    "email": "",
+    "phone": "+91 9843282808",
+    "address": "[Your Studio Address Here]\nErode, Tamil Nadu",
+    "location": "Based in Erode, Tamil Nadu.\nAvailable for weddings across Erode, Coimbatore, Salem, Tiruppur and nearby districts."
+  }
+};
+    /* === CONFIGURATION END === */
+
+    let supabaseClient = null;
+    let isAdminAuthenticated = false;
+
+    // --- INITIALIZE PAGE AND DATA ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 1. Load configuration from LocalStorage (if any edits were saved)
+      const cachedData = storage.getItem("SITE_DATA_PREVIEW");
+      if (cachedData) {
+        try { SITE_DATA = JSON.parse(cachedData); } catch (e) { console.error("Cached json error", e); }
+      }
+      
+      const cachedUrl = storage.getItem("SUPABASE_URL");
+      const cachedAnonKey = storage.getItem("SUPABASE_ANON_KEY");
+      if (cachedUrl) SUPABASE_URL = cachedUrl;
+      if (cachedAnonKey) SUPABASE_ANON_KEY = cachedAnonKey;
+
+      // 2. Initialize Database if credentials are set
+      await initDatabaseConnection();
+
+      // 3. Render site content
+      renderAll();
+
+      // 4. Attach hash listeners
+      window.addEventListener('hashchange', checkHashRoute);
+      checkHashRoute();
+    });
+
+    // Toggle mobile menu navigation
     const hamburger = document.getElementById('hamburger');
     const navLinks = document.getElementById('navLinks');
-    hamburger.addEventListener('click', () => {
-      navLinks.classList.toggle('open');
-    });
+    hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
     navLinks.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => navLinks.classList.remove('open'));
     });
 
-    // WhatsApp enquiry sender
+    // Check hash changes for Admin panel access
+    function checkHashRoute() {
+      if (window.location.hash === '#admin') {
+        if (isAdminAuthenticated) {
+          openAdminDashboard();
+        } else {
+          document.getElementById('adminLoginModal').style.display = 'flex';
+          document.getElementById('adminPassword').focus();
+        }
+      }
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminLoginModal').style.display = 'none';
+      document.getElementById('adminDashboard').style.display = 'none';
+      // Clear hash without reloading
+      history.pushState("", document.title, window.location.pathname + window.location.search);
+    }
+
+    // Local Passcode Verification
+    function loginAdminLocal() {
+      const passcode = document.getElementById('adminPassword').value;
+      if (passcode === 'admin123') {
+        isAdminAuthenticated = true;
+        document.getElementById('adminLoginModal').style.display = 'none';
+        openAdminDashboard();
+      } else {
+        alert("Incorrect passcode! Use 'admin123' or configure Supabase authentication.");
+      }
+    }
+
+    // --- DYNAMIC RENDERING FUNCTIONS ---
+    function renderAll() {
+      renderLogo();
+      renderHero();
+      renderServices();
+      renderWhyUs();
+      renderGallery();
+      renderTestimonials();
+      renderContact();
+    }
+
+    function renderLogo() {
+      const logoHTML = `${SITE_DATA.logo.text} <span>${SITE_DATA.logo.highlight}</span>`;
+      document.getElementById('navLogo').innerHTML = logoHTML;
+    }
+
+    // Render Hero
+    function renderHero() {
+      document.getElementById('heroBadge').innerText = SITE_DATA.hero.badge;
+      
+      const titleHTML = `${SITE_DATA.hero.title_before} <em>${SITE_DATA.hero.title_em}</em><br>${SITE_DATA.hero.title_after}`;
+      document.getElementById('heroTitle').innerHTML = titleHTML;
+      
+      document.getElementById('heroSub').innerText = SITE_DATA.hero.subtitle;
+      
+      // WhatsApp links
+      const waLink = `https://wa.me/${SITE_DATA.whatsapp}`;
+      document.getElementById('navCTA').setAttribute('href', waLink);
+      document.getElementById('heroCTA').setAttribute('href', waLink + `?text=Hello!%20I'd%20like%20to%20book%20a%20photography%20session.`);
+      
+      // Stats
+      const statsGrid = document.getElementById('heroStats');
+      statsGrid.innerHTML = '';
+      SITE_DATA.hero.stats.forEach(stat => {
+        const div = document.createElement('div');
+        div.innerHTML = `<div class="stat-num">${stat.num}</div><div class="stat-label">${stat.label}</div>`;
+        statsGrid.appendChild(div);
+      });
+    }
+
+    function renderServices() {
+      const grid = document.getElementById('servicesGrid');
+      grid.innerHTML = '';
+      
+      const formSelect = document.getElementById('ftype');
+      // Keep first option
+      formSelect.innerHTML = '<option value="" disabled selected>Event type</option>';
+
+      SITE_DATA.services.forEach(srv => {
+        // Render Card
+        const card = document.createElement('div');
+        card.className = 'service-card';
+        card.innerHTML = `
+          <div class="service-icon"><i class="ti ${srv.icon}"></i></div>
+          <h3>${srv.title}</h3>
+          <p>${srv.desc}</p>
+          <div class="service-price">${srv.price}</div>
+        `;
+        grid.appendChild(card);
+
+        // Add to Form select list
+        const opt = document.createElement('option');
+        opt.value = srv.title;
+        opt.innerText = srv.title;
+        formSelect.appendChild(opt);
+      });
+      // Add other option
+      const optOther = document.createElement('option');
+      optOther.value = 'Other';
+      optOther.innerText = 'Other';
+      formSelect.appendChild(optOther);
+    }
+
+    function renderWhyUs() {
+      document.getElementById('whyTag').innerText = SITE_DATA.whyUs.tag;
+      document.getElementById('whyTitle').innerText = SITE_DATA.whyUs.title;
+      
+      const grid = document.getElementById('whyGrid');
+      grid.innerHTML = '';
+      SITE_DATA.whyUs.items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'why-item';
+        card.innerHTML = `
+          <i class="ti ${item.icon}"></i>
+          <h4>${item.title}</h4>
+          <p>${item.desc}</p>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderGallery() {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+      
+      SITE_DATA.gallery.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `gallery-item ${item.class || ''}`;
+        if (item.class === 'tall') {
+          card.style.gridRow = 'span 2';
+        }
+        
+        if (item.img) {
+          card.innerHTML = `<img src="${item.img}" alt="${item.category} photography Aadhi Photography" />`;
+        } else {
+          card.style.background = item.bg || '#252020';
+          card.innerHTML = `
+            <div class="gallery-ph">
+              <i class="ti ${item.icon || 'ti-camera'}"></i>
+              <span>${item.category}</span>
+            </div>
+          `;
+        }
+        grid.appendChild(card);
+      });
+    }
+
+    function renderTestimonials() {
+      const grid = document.getElementById('testimonialsGrid');
+      grid.innerHTML = '';
+      
+      SITE_DATA.testimonials.forEach(t => {
+        const card = document.createElement('div');
+        card.className = 'testi-card';
+        card.innerHTML = `
+          <div class="stars">${t.stars}</div>
+          <p class="testi-text">${t.content}</p>
+          <div class="testi-name">${t.name}</div>
+          <div class="testi-event">${t.event}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderContact() {
+      // Info panel
+      const infoPanel = document.getElementById('contactInfo');
+      infoPanel.innerHTML = `
+        <p>
+          ${SITE_DATA.contact.location.replace(/\n/g, '<br>')}<br><br>
+          <strong style="color:#fff;font-weight:500;">Studio Address:</strong><br>
+          ${SITE_DATA.contact.address.replace(/\n/g, '<br>')}<br><br>
+          <strong style="color:#fff;font-weight:500;">Phone / WhatsApp:</strong><br>
+          ${SITE_DATA.contact.phone}
+        </p>
+        <a href="https://wa.me/${SITE_DATA.whatsapp}" class="contact-btn" target="_blank">
+          <i class="ti ti-brand-whatsapp"></i>
+          Chat on WhatsApp
+        </a>
+      `;
+      
+      // Footer copyright and WhatsApp
+      document.getElementById('footerCopyright').innerText = `© ${new Date().getFullYear()} ${SITE_DATA.logo.text} ${SITE_DATA.logo.highlight} · Erode, Tamil Nadu`;
+      document.getElementById('footerBadge').innerText = SITE_DATA.hero.badge;
+      document.getElementById('footerCTA').setAttribute('href', `https://wa.me/${SITE_DATA.whatsapp}`);
+    }
+
+    // Send Enquiry to WhatsApp
     function sendEnquiry() {
       const name = document.getElementById('fname').value.trim();
       const phone = document.getElementById('fphone').value.trim();
@@ -591,13 +1246,463 @@
         return;
       }
 
-      const whatsappNumber = '919843282808'; // ← REPLACE WITH FATHER'S NUMBER
+      const whatsappNumber = SITE_DATA.whatsapp;
       const text = `Hello! I'd like to enquire about a photoshoot.%0A%0A*Name:* ${name}%0A*Phone:* ${phone}%0A*Type:* ${type || 'Not specified'}%0A*Date:* ${date || 'Not specified'}%0A*Message:* ${msg || 'No message'}`;
       window.open(`https://wa.me/${whatsappNumber}?text=${text}`, '_blank');
 
       document.getElementById('formSuccess').style.display = 'block';
     }
-  </script>
 
+    // --- SUPABASE DATABASE CONFIGURATION & OPERATIONS ---
+    async function initDatabaseConnection() {
+      if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          
+          // Test read
+          const { data, error } = await supabaseClient
+            .from('portfolio_data')
+            .select('content')
+            .eq('id', 1)
+            .maybeSingle();
+
+          if (error) throw error;
+          
+          if (data && data.content) {
+            SITE_DATA = data.content;
+            console.log("Supabase connected & content updated.");
+            updateDatabaseStatus(true, "Connected");
+            
+            // Check if authenticated
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+              isAdminAuthenticated = true;
+              document.getElementById('db-sync-btn').style.display = 'inline-flex';
+              updateDatabaseStatus(true, `Connected (Logged in: ${session.user.email})`);
+            }
+          } else {
+            // Row 1 doesn't exist, we can create it once authenticated
+            updateDatabaseStatus(true, "Connected (Database Empty)");
+          }
+        } catch (e) {
+          console.error("Database connection failure:", e);
+          updateDatabaseStatus(false, "Connection Failed");
+        }
+      } else {
+        updateDatabaseStatus(false, "Offline Local Mode");
+      }
+    }
+
+    function updateDatabaseStatus(connected, messageText) {
+      const badge = document.getElementById('db-status-badge');
+      if (!badge) return;
+      
+      badge.className = 'btn-db-status';
+      if (connected) {
+        badge.classList.add('connected');
+        badge.innerHTML = `<i class="ti ti-database"></i> <span>${messageText || 'Connected'}</span>`;
+      } else {
+        badge.classList.add('failed');
+        badge.innerHTML = `<i class="ti ti-database-off"></i> <span>${messageText || 'Offline'}</span>`;
+      }
+    }
+
+    // Authenticate & Connect via Form UI
+    async function connectAndLoginSupabase() {
+      const url = document.getElementById('db-url-input').value.trim();
+      const key = document.getElementById('db-key-input').value.trim();
+      const email = document.getElementById('db-email-input').value.trim();
+      const password = document.getElementById('db-pass-input').value;
+
+      if (!url || !key) {
+        alert("Please enter both Supabase Project URL and Anon API key.");
+        return;
+      }
+
+      try {
+        const tempSupabase = window.supabase.createClient(url, key);
+        
+        // Login
+        const { data, error } = await tempSupabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        
+        // Success
+        SUPABASE_URL = url;
+        SUPABASE_ANON_KEY = key;
+        supabaseClient = tempSupabase;
+        isAdminAuthenticated = true;
+        
+        storage.setItem("SUPABASE_URL", url);
+        storage.setItem("SUPABASE_ANON_KEY", key);
+        
+        alert("Authenticated successfully! Connected to Supabase.");
+        
+        // Check database row 1
+        const { data: row } = await supabaseClient.from('portfolio_data').select('content').eq('id', 1).maybeSingle();
+        if (row && row.content) {
+          SITE_DATA = row.content;
+          storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+          renderAll();
+          openAdminDashboard(); // Refresh inputs
+        }
+        
+        document.getElementById('db-sync-btn').style.display = 'inline-flex';
+        updateDatabaseStatus(true, `Connected (Logged in: ${email})`);
+      } catch (err) {
+        alert(`Authentication failed: ${err.message}`);
+      }
+    }
+
+    // Admin Sign Up (Run once to create the project's admin account)
+    async function registerSupabaseAdmin() {
+      const url = document.getElementById('db-url-input').value.trim();
+      const key = document.getElementById('db-key-input').value.trim();
+      const email = document.getElementById('db-email-input').value.trim();
+      const password = document.getElementById('db-pass-input').value;
+
+      if (!url || !key || !email || !password) {
+        alert("Fill out all database and auth inputs to sign up.");
+        return;
+      }
+
+      try {
+        const tempSupabase = window.supabase.createClient(url, key);
+        const { data, error } = await tempSupabase.auth.signUp({ email, password });
+        if (error) throw error;
+        
+        alert("Admin account registration complete! Check your email inbox to confirm signup, then click 'Sign In & Connect'.");
+      } catch (err) {
+        alert(`Registration failed: ${err.message}`);
+      }
+    }
+
+    // Sync edited local preview data up to Supabase
+    async function syncDataToSupabase() {
+      if (!supabaseClient) {
+        alert("Database is not connected.");
+        return;
+      }
+
+      try {
+        // Upsert table row id = 1
+        const { error } = await supabaseClient
+          .from('portfolio_data')
+          .upsert({ id: 1, content: SITE_DATA, updated_at: new Date().toISOString() });
+          
+        if (error) throw error;
+        
+        alert("SUCCESS! Website content synced and saved to online database.");
+      } catch (err) {
+        alert(`Database synchronization failed: ${err.message}\nMake sure RLS policies are set correctly in Supabase.`);
+      }
+    }
+
+    // --- ADMIN PANEL EDIT ACTIONS ---
+    function openAdminDashboard() {
+      document.getElementById('adminDashboard').style.display = 'flex';
+      
+      // Load current inputs
+      document.getElementById('adm-logo-text').value = SITE_DATA.logo.text;
+      document.getElementById('adm-logo-highlight').value = SITE_DATA.logo.highlight;
+      document.getElementById('adm-whatsapp').value = SITE_DATA.whatsapp;
+      document.getElementById('adm-hero-badge').value = SITE_DATA.hero.badge;
+      document.getElementById('adm-hero-before').value = SITE_DATA.hero.title_before;
+      document.getElementById('adm-hero-em').value = SITE_DATA.hero.title_em;
+      document.getElementById('adm-hero-after').value = SITE_DATA.hero.title_after;
+      document.getElementById('adm-hero-sub').value = SITE_DATA.hero.subtitle;
+      
+      document.getElementById('adm-contact-phone').value = SITE_DATA.contact.phone;
+      document.getElementById('adm-contact-email').value = SITE_DATA.contact.email;
+      document.getElementById('adm-contact-address').value = SITE_DATA.contact.address;
+      document.getElementById('adm-contact-location').value = SITE_DATA.contact.location;
+      
+      // DB configs
+      document.getElementById('db-url-input').value = SUPABASE_URL;
+      document.getElementById('db-key-input').value = SUPABASE_ANON_KEY;
+
+      renderAdminStatsList();
+      renderAdminServicesList();
+      renderAdminGalleryList();
+      renderAdminTestimonialsList();
+    }
+
+    function switchAdminTab(tabName) {
+      document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.remove('active'));
+      
+      // Locate button by function text or click
+      const eventBtn = Array.from(document.querySelectorAll('.admin-tab-btn')).find(b => b.getAttribute('onclick').includes(tabName));
+      if (eventBtn) eventBtn.classList.add('active');
+      
+      const content = document.getElementById(`tab-${tabName}`);
+      if (content) content.classList.add('active');
+    }
+
+    // Real-time Field Updates
+    function updateGeneralField(section, key, value) {
+      if (key === null) {
+        SITE_DATA[section] = value;
+      } else {
+        SITE_DATA[section][key] = value;
+      }
+      
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+    }
+
+    // Stats editor list
+    function renderAdminStatsList() {
+      const container = document.getElementById('adm-stats-list');
+      container.innerHTML = '';
+      SITE_DATA.hero.stats.forEach((stat, idx) => {
+        const row = document.createElement('div');
+        row.className = 'admin-field-row';
+        row.innerHTML = `
+          <div class="admin-field-group">
+            <label>Stat Number (e.g. 500+)</label>
+            <input type="text" value="${stat.num}" oninput="updateStat(${idx}, 'num', this.value)" />
+          </div>
+          <div class="admin-field-group">
+            <label>Stat Label</label>
+            <input type="text" value="${stat.label}" oninput="updateStat(${idx}, 'label', this.value)" />
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function updateStat(idx, field, value) {
+      SITE_DATA.hero.stats[idx][field] = value;
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+    }
+
+    // Services editor list
+    function renderAdminServicesList() {
+      const container = document.getElementById('adm-services-list');
+      container.innerHTML = '';
+      SITE_DATA.services.forEach((srv, idx) => {
+        const item = document.createElement('div');
+        item.className = 'admin-list-item';
+        item.innerHTML = `
+          <button class="remove-btn" onclick="removeService(${idx})">Delete</button>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Service Title</label>
+              <input type="text" value="${srv.title}" data-service-index="${idx}" data-field="title" oninput="updateService(${idx}, 'title', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Starting Price text</label>
+              <input type="text" value="${srv.price}" data-service-index="${idx}" data-field="price" oninput="updateService(${idx}, 'price', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <label>Service Icon Class (Tabler Icons, e.g. ti-heart, ti-camera, ti-users)</label>
+            <input type="text" value="${srv.icon}" oninput="updateService(${idx}, 'icon', this.value)" />
+          </div>
+          <div class="admin-field-group">
+            <label>Service Description</label>
+            <textarea oninput="updateService(${idx}, 'desc', this.value)">${srv.desc}</textarea>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateService(idx, field, value) {
+      SITE_DATA.services[idx][field] = value;
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+    }
+
+    function addNewService() {
+      SITE_DATA.services.push({
+        icon: "ti-camera",
+        title: "New Shoot Package",
+        desc: "Description of your photo session here.",
+        price: "Starting ₹5,000 onwards"
+      });
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+      renderAdminServicesList();
+    }
+
+    function removeService(idx) {
+      if (confirm("Are you sure you want to remove this service?")) {
+        SITE_DATA.services.splice(idx, 1);
+        storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+        renderAll();
+        renderAdminServicesList();
+      }
+    }
+
+    // Gallery editor list
+    function renderAdminGalleryList() {
+      const container = document.getElementById('adm-gallery-list');
+      container.innerHTML = '';
+      SITE_DATA.gallery.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'admin-list-item';
+        card.innerHTML = `
+          <button class="remove-btn" onclick="removeGalleryItem(${idx})">Delete</button>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Category Label</label>
+              <input type="text" value="${item.category}" oninput="updateGalleryItem(${idx}, 'category', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Placeholder Icon (e.g. ti-camera, ti-heart)</label>
+              <input type="text" value="${item.icon}" oninput="updateGalleryItem(${idx}, 'icon', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <label>Image URL (Leave blank to show placeholder color &amp; icon)</label>
+            <input type="text" value="${item.img || ''}" placeholder="https://images.unsplash.com/..." oninput="updateGalleryItem(${idx}, 'img', this.value)" />
+          </div>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Placeholder Background Color</label>
+              <input type="text" value="${item.bg || '#222'}" oninput="updateGalleryItem(${idx}, 'bg', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Layout Style</label>
+              <select onchange="updateGalleryItem(${idx}, 'class', this.value)">
+                <option value="" ${item.class !== 'tall' ? 'selected' : ''}>Square (Standard)</option>
+                <option value="tall" ${item.class === 'tall' ? 'selected' : ''}>Tall (Vertical Grid Span)</option>
+              </select>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateGalleryItem(idx, field, value) {
+      SITE_DATA.gallery[idx][field] = value;
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+    }
+
+    function addNewGalleryItem() {
+      SITE_DATA.gallery.push({
+        category: "Event",
+        bg: "#222222",
+        icon: "ti-camera",
+        img: "",
+        class: ""
+      });
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+      renderAdminGalleryList();
+    }
+
+    function removeGalleryItem(idx) {
+      if (confirm("Remove this gallery image placeholder?")) {
+        SITE_DATA.gallery.splice(idx, 1);
+        storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+        renderAll();
+        renderAdminGalleryList();
+      }
+    }
+
+    // Testimonials editor list
+    function renderAdminTestimonialsList() {
+      const container = document.getElementById('adm-testimonials-list');
+      container.innerHTML = '';
+      SITE_DATA.testimonials.forEach((t, idx) => {
+        const card = document.createElement('div');
+        card.className = 'admin-list-item';
+        card.innerHTML = `
+          <button class="remove-btn" onclick="removeTestimonial(${idx})">Delete</button>
+          <div class="admin-field-row">
+            <div class="admin-field-group">
+              <label>Client Name</label>
+              <input type="text" value="${t.name}" oninput="updateTestimonial(${idx}, 'name', this.value)" />
+            </div>
+            <div class="admin-field-group">
+              <label>Event Type / Date</label>
+              <input type="text" value="${t.event}" oninput="updateTestimonial(${idx}, 'event', this.value)" />
+            </div>
+          </div>
+          <div class="admin-field-group">
+            <label>Rating (Stars)</label>
+            <select onchange="updateTestimonial(${idx}, 'stars', this.value)">
+              <option value="★★★★★" ${t.stars === '★★★★★' ? 'selected' : ''}>5 Stars</option>
+              <option value="★★★★" ${t.stars === '★★★★' ? 'selected' : ''}>4 Stars</option>
+              <option value="★★★" ${t.stars === '★★★' ? 'selected' : ''}>3 Stars</option>
+            </select>
+          </div>
+          <div class="admin-field-group">
+            <label>Review Quote</label>
+            <textarea oninput="updateTestimonial(${idx}, 'content', this.value)">${t.content}</textarea>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateTestimonial(idx, field, value) {
+      SITE_DATA.testimonials[idx][field] = value;
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+    }
+
+    function addNewTestimonial() {
+      SITE_DATA.testimonials.push({
+        name: "Client Name",
+        stars: "★★★★★",
+        event: "Family Shoot, 2026",
+        content: "\"Words describing their great experience with the session here.\""
+      });
+      storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+      renderAll();
+      renderAdminTestimonialsList();
+    }
+
+    function removeTestimonial(idx) {
+      if (confirm("Remove this review?")) {
+        SITE_DATA.testimonials.splice(idx, 1);
+        storage.setItem("SITE_DATA_PREVIEW", JSON.stringify(SITE_DATA));
+        renderAll();
+        renderAdminTestimonialsList();
+      }
+    }
+
+    // --- HTML CODE EXPORTER ENGINE ---
+    function exportHTML() {
+      // Get the entire HTML file string
+      let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Clean up UI state: Hide modals
+      const loginModal = doc.getElementById('adminLoginModal');
+      if (loginModal) loginModal.style.display = 'none';
+      const dashboard = doc.getElementById('adminDashboard');
+      if (dashboard) dashboard.style.display = 'none';
+      
+      // Clean menu classes
+      const navLinksEl = doc.getElementById('navLinks');
+      if (navLinksEl) navLinksEl.classList.remove('open');
+
+      let updatedHtml = doc.documentElement.outerHTML;
+      
+      // Format serialised script configuration strings
+      const configString = `/* === CONFIGURATION START === */\n    let SUPABASE_URL = ${JSON.stringify(storage.getItem('SUPABASE_URL') || SUPABASE_URL)};\n    let SUPABASE_ANON_KEY = ${JSON.stringify(storage.getItem('SUPABASE_ANON_KEY') || SUPABASE_ANON_KEY)};\n    let SITE_DATA = ${JSON.stringify(SITE_DATA, null, 2)};\n    /* === CONFIGURATION END === */`;
+      
+      const regex = /\/\* === CONFIGURATION START === \*\/[\s\S]*?\/\* === CONFIGURATION END === \*\//;
+      updatedHtml = '<!DOCTYPE html>\n' + updatedHtml.replace(regex, configString);
+      
+      // Trigger download
+      const blob = new Blob([updatedHtml], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'aadhi_photography.html';
+      a.click();
+      
+      console.log("HTML Export Complete.");
+    }
+  </script>
 </body>
 </html>
