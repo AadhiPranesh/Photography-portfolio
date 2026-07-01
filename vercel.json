@@ -3,6 +3,14 @@
     {
       "source": "/",
       "destination": "/aadhi_photography.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/aadhi_photography.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/aadhi_photography.html"
     }
   ]
 }
